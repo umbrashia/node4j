@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "start": "ts-node src/example/main.ts"
   },
   "files": [
     "dist"
@@ -24,6 +25,18 @@
   "homepage": "https://github.com/umbrashia/node4j#readme",
   "devDependencies": {
     "@types/node": "^24.9.2",
+    "@types/ws": "^8.18.1",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/async": "^3.2.25",
+    "async": "^3.2.6",
+    "decimal.js": "^10.6.0",
+    "queue-typescript": "^1.0.1",
+    "tiny-queue": "^0.2.1",
+    "uuid": "^13.0.0",
+    "ws": "^8.18.3"
   }
 }
