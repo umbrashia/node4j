@@ -29,6 +29,12 @@ import {
   CONSTRUCTOR_COMMAND_NAME,
   REFLECTION_COMMAND_NAME,
   SUCCESS,
+  REFL_GET_UNKNOWN_SUB_COMMAND_NAME,
+  REF_TYPE_COMMAND_NAME,
+  PACKAGE_TYPE,
+  CLASS_TYPE,
+  SUCCESS_CLASS_COMMAND,
+  METHOD_TYPE,
 } from "./constants";
 
 /* ... other command constants are available above if you want to add more */
@@ -79,7 +85,7 @@ function decodeBytearray(encoded: string): Uint8Array {
    - parameter?.Java?.implements is an array-like -> treat as proxy.
    - If you need different behaviour, pass a custom detector later.
 */
-function isPythonProxy(param: any): boolean {
+function isNodeProxy(param: any): boolean {
   try {
     return !!(
       param &&
@@ -164,7 +170,7 @@ export function getCommandPart(
   }
 
   // Python proxy check
-  if (isPythonProxy(parameter) && NodeJsProxyPool) {
+  if (isNodeProxy(parameter) && NodeJsProxyPool) {
     const proxyId = NodeJsProxyPool.put(parameter); // e.g., "p0"
     let part = PYTHON_PROXY_TYPE + proxyId;
     for (const iface of parameter.Java.implements) {
@@ -175,11 +181,11 @@ export function getCommandPart(
 
   // JS object interpreted as reference to an existing Java object:
   // Accept either:
-  // - parameter.__py4jRef (string)
+  // - parameter.__node4jRef (string)
   // - parameter._get_object_id() function
   if (parameter && typeof parameter === "object") {
-    if (typeof parameter.__py4jRef === "string") {
-      return REFERENCE_TYPE + parameter.__py4jRef;
+    if (typeof parameter.__node4jRef === "string") {
+      return REFERENCE_TYPE + parameter.__node4jRef;
     }
     if (typeof parameter._get_object_id === "function") {
       // some wrappers might implement this; call it:
@@ -212,10 +218,13 @@ export function getCommandPart(
  * s<fully-qualified-class-name>\n
  * e\n
  */
-export function encodeConstructor(fullPath: string): string {
+export function encodeConstructor(fullPath: string, args: string[]): string {
   const lines: string[] = [];
   lines.push(CONSTRUCTOR_COMMAND_NAME.trim()); // "i"
   lines.push(escapeNewLine(fullPath) as string);
+  for (const a of args) {
+    lines.push(getCommandPart(a));
+  }
   lines.push(END);
   return lines.join("\n") + "\n";
 }
@@ -240,9 +249,9 @@ export function encodeCall(
   const parts: string[] = [];
   parts.push(CALL_COMMAND_NAME.trim()); // "c"
   // target reference: the protocol expects a REFERENCE_TYPE + id as a command part
-  parts.push(REFERENCE_TYPE + targetRefId);
+  parts.push(/*REFERENCE_TYPE + */ targetRefId);
   // method name is sent as a string part
-  parts.push(STRING_TYPE + (escapeNewLine(methodName) as string));
+  parts.push(/*STRING_TYPE +*/ escapeNewLine(methodName) as string);
   // arguments converted via getCommandPart
   for (const a of args) {
     parts.push(getCommandPart(a, NodeJsProxyPool));
@@ -254,20 +263,39 @@ export function encodeCall(
 /**
  * Build a reflection command (simple version: r\n s<classFqn>\n e\n)
  */
-export function encodeReflection(classFqn: string): string {
+export function encodeReflection(classFqn: string, subPath?: string): string {
+  //"r\nu\njava\nrj\ne\n"
+  //"r\nm\njava.lang.System\ncurrentTimeMillis\ne\n'
+
   const parts: string[] = [];
-  parts.push(REFLECTION_COMMAND_NAME.trim()); // "r"
-  parts.push(STRING_TYPE + (escapeNewLine(classFqn) as string));
+  parts.push(REFERENCE_TYPE.trim()); // "r"
+  if (!subPath) {
+    parts.push(REFL_GET_UNKNOWN_SUB_COMMAND_NAME);
+  } else {
+    parts.push(METHOD_TYPE.trim());
+  }
+  parts.push(escapeNewLine(classFqn) as string);
+  if (subPath) {
+    parts.push(escapeNewLine(subPath) as string);
+  } else {
+    parts.push(REF_TYPE_COMMAND_NAME);
+  }
   parts.push(END);
   return parts.join("\n") + "\n";
+}
+
+export function encodeStaticCall() {
+  //"c\nz:java.lang.System\ncurrentTimeMillis\ne\n'
+  const parts: string[] = [];
 }
 
 export function encodeCommand(input: EncodeCommandInput): string {
   switch (input.cmd) {
     case "constructor":
-      return encodeConstructor(input.fullPath);
+      return encodeConstructor(input.fullPath, input.args || []);
     case "reflection":
-      return encodeReflection(input.fullPath);
+      return encodeReflection(input.fullPath, input?.subPath);
+
     case "call":
       return encodeCall(
         input.targetRefId,
@@ -301,6 +329,16 @@ export class Node4JJavaError extends Node4JError {
   }
 }
 
+export class Node4jJavaObjectRef {
+  __node4jRef: string;
+  constructor(id: string) {
+    this.__node4jRef = id;
+  }
+  _get_object_id(): string {
+    return this.__node4jRef;
+  }
+}
+
 function isErrorAnswer(answer: string): boolean {
   return !answer || answer.length === 0 || answer[0] !== SUCCESS;
 }
@@ -312,7 +350,7 @@ function isErrorAnswer(answer: string): boolean {
  * Examples:
  *   "!yi42\n" or "yi42\n" -> integer 42
  *   "!ysHello\\nWorld\n" -> "Hello\nWorld"
- *   "!yrj\n" -> reference { __py4jRef: 'rj' }
+ *   "!yrj\n" -> reference { __node4jRef: 'rj' }
  */
 export function decodeResponse(raw: string): any {
   // normalize: remove leading '!' if present, trim trailing newlines.
@@ -332,7 +370,7 @@ export function decodeResponse(raw: string): any {
       const errPayload = answer.slice(2);
       if (errType === REFERENCE_TYPE) {
         throw new Node4JJavaError("Java exception (remote reference)", {
-          __py4jRef: errPayload,
+          __node4jRef: errPayload,
         });
       } else {
         // try to decode string payload if it's a string
@@ -355,6 +393,12 @@ export function decodeResponse(raw: string): any {
     const payload = answer.slice(2);
 
     switch (t) {
+      case PACKAGE_TYPE:
+        return answer;
+      case CLASS_TYPE:
+        return answer;
+      case METHOD_TYPE:
+        return answer;
       case NULL_TYPE:
         return null;
       case BOOLEAN_TYPE:
@@ -382,7 +426,7 @@ export function decodeResponse(raw: string): any {
         return unescapeNewLine(payload);
       case REFERENCE_TYPE:
         // return a JS-friendly wrapper for existing Java object id
-        return { __py4jRef: payload };
+        return new Node4jJavaObjectRef(payload);
       case VOID_TYPE:
         return undefined;
       default:
@@ -406,7 +450,7 @@ export function decodeResponse(raw: string): any {
 // const ctorCmd = encodeConstructor("java.util.Random");
 // // send ctorCmd on socket
 //
-// // Suppose Java returns a reference like "!yr0\n"  -> decodeResponse -> { __py4jRef: "r0" }
+// // Suppose Java returns a reference like "!yr0\n"  -> decodeResponse -> { __node4jRef: "r0" }
 // // Then call nextInt on that ref:
 // const callCmd = encodeCall("r0", "nextInt", [10]);
 // // send callCmd on socket

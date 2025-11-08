@@ -15,6 +15,7 @@ export type NodeJsProxyPool = {
  */
 export type EncodeCommandInput =
   | { cmd: "constructor"; fullPath: string; args?: any[] }
+  | { cmd: "staticCall"; fullPath: string; methodPath: string; args: any[] }
   | {
       cmd: "call";
       targetRefId: string;
@@ -22,7 +23,7 @@ export type EncodeCommandInput =
       args?: any[];
       NodeJsProxyPool?: NodeJsProxyPool;
     }
-  | { cmd: "reflection"; fullPath: string };
+  | { cmd: "reflection"; fullPath: string; subPath?: string };
 
 export type JavaProxy = {
   // It's callable, for `...method()`
@@ -33,6 +34,12 @@ export type JavaProxy = {
 
 export type ProxyCommandType = {
   javaBridge: any | null;
-  fullPath: string;
+  path: string[];
   args: any[];
+};
+
+export type CallbackSocket = {
+  buffer: string;
+  resolve: (message: string) => void;
+  reject: (error: any) => void;
 };

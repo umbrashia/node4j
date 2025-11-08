@@ -6,9 +6,22 @@ import { Gateway } from "../lib/gateway";
  * using the JavaGateway and interact with Java objects.
  */
 async function main() {
-  const myJava = new Gateway(new Object());
-  console.log(JSON.stringify(await myJava.jvm.java.util.Random(22, 33)));
-
+  const myJava = new Gateway({
+    host: "127.0.0.1",
+    port: 25333,
+  });
+  //start initial time checkpoint.
+  const startTime = process.hrtime();
+  const random = await myJava.jvm.java.util.Random();
+  const number1 = await random.nextInt(10);
+  const number2 = await random.nextInt(10);
+  const currentTime = await myJava.jvm.System.currentTimeMillis();
+  //take diffrence in milliseconds.
+  const endTime = process.hrtime(startTime);
+  const timeInMs = endTime[0] * 1000 + endTime[1] / 1000000;
+  console.log(`Execution time: ${timeInMs} ms`);
+  console.log(currentTime);
+  console.log(`Generated numbers are: ${number1} and ${number2}`);
   try {
     // 2. Get a reference to the java.util.Random class and create a new instance.
     // Every interaction with the JVM is asynchronous, so we use 'await'.
