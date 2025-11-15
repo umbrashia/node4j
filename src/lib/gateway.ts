@@ -17,6 +17,7 @@ import { JavaProxy, ProxyCommandType } from "./types";
 
 export class Gateway {
   #jvm: JavaProxy;
+  #entryPoint: JavaProxy;
   public connectionSocket: ConnectionSocket = undefined as any;
   constructor({
     host = "127.0.0.1",
@@ -27,9 +28,14 @@ export class Gateway {
   }) {
     this.connectionSocket = new ConnectionSocket(host, port);
     this.#jvm = this.createJavaProxy(null, []);
+    this.#entryPoint = this.createJavaProxy(new Node4jJavaObjectRef("t"), []);
   }
   get jvm() {
     return this.#jvm;
+  }
+
+  get entryPoint() {
+    return this.#entryPoint;
   }
 
   async generateCommand(proxyCommand: ProxyCommandType): Promise<any> {
@@ -47,9 +53,10 @@ export class Gateway {
           fullPath: command || pathString.slice(0, Number(key) + 1).join("."),
           subPath: command ? pathString[Number(key)] : undefined,
         });
-        const refType = decodeResponse(
-          await this.connectionSocket.sendCommand(tempCmd)
+        const _commandResponse = await this.connectionSocket.sendCommand(
+          tempCmd
         );
+        const refType = decodeResponse(_commandResponse);
         if (refType === SUCCESS_PACKAGE_COMMAND) {
           continue;
         }

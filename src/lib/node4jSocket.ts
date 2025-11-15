@@ -9,6 +9,7 @@ export class ConnectionSocket {
   constructor(host: string, port: number) {
     this.#host = host;
     this.#port = port;
+    this.registerExitHandlers();
   }
 
   async connect(): Promise<any> {
@@ -43,6 +44,31 @@ export class ConnectionSocket {
         console.log("Connected to server");
         resolve(this.#socket);
       });
+    });
+  }
+
+  private registerExitHandlers() {
+    const close = () => {
+      if (!this.#socket.destroyed) {
+        console.log("[Py4J] Closing socket...");
+        this.#socket.end(); // graceful FIN
+        this.#socket.destroy(); // immediate close
+      }
+    };
+
+    // Node exits normally
+    process.on("exit", close);
+
+    // Ctrl+C
+    process.on("SIGINT", () => {
+      close();
+      process.exit(0);
+    });
+
+    // If parent sends SIGTERM
+    process.on("SIGTERM", () => {
+      close();
+      process.exit(0);
     });
   }
 

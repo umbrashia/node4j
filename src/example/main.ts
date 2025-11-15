@@ -12,10 +12,13 @@ async function main() {
   });
   //start initial time checkpoint.
   const startTime = process.hrtime();
+  const myNameMessage = await myJava.entryPoint.sayHello("shantanu");
+  console.log(myNameMessage);
   const random = await myJava.jvm.java.util.Random();
   const number1 = await random.nextInt(10);
   const number2 = await random.nextInt(10);
-  const currentTime = await myJava.jvm.System.currentTimeMillis();
+  const system = await myJava.jvm.System;
+  const currentTime = await system.currentTimeMillis();
   //take diffrence in milliseconds.
   const endTime = process.hrtime(startTime);
   const timeInMs = endTime[0] * 1000 + endTime[1] / 1000000;
