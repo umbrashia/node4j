@@ -50,7 +50,7 @@ export class ConnectionSocket {
   private registerExitHandlers() {
     const close = () => {
       if (!this.#socket.destroyed) {
-        console.log("[Py4J] Closing socket...");
+        console.log("[node4J] Closing socket...");
         this.#socket.end(); // graceful FIN
         this.#socket.destroy(); // immediate close
       }
