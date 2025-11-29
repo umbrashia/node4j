@@ -30,7 +30,7 @@ First, add the `py4j` dependency to your Java project. If you are using Maven, a
 <dependency>
     <groupId>net.sf.py4j</groupId>
     <artifactId>py4j</artifactId>
-    <version>0.10.9.7</version>
+    <version>0.10.9.9</version>
 </dependency>
 ```
 
