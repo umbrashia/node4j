@@ -12,8 +12,10 @@ async function main() {
   });
   //start initial time checkpoint.
   const startTime = process.hrtime();
-  const myNameMessage = await myJava.entryPoint.sayHello("shantanu");
-  console.log(myNameMessage);
+  const stack = await myJava.entryPoint.getStack();
+  await stack.push("main");
+  await stack.push("Second item");
+  const popValue = await stack.pop();
   const random = await myJava.jvm.java.util.Random();
   const number1 = await random.nextInt(10);
   const number2 = await random.nextInt(10);
