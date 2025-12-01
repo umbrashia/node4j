@@ -136,7 +136,7 @@ async function main() {
   await stack.push("main");
   await stack.push("Second item");
   const popValue = await stack.pop(); // popValue will be "Second item"
-  console.log(popValue);
+  console.log("pop value : " + popValue);
 
   // 2. Create new Java objects and call static methods
   const random = await myJava.jvm.java.util.Random();
@@ -146,10 +146,18 @@ async function main() {
 
   const system = await myJava.jvm.System;
   const currentTime = await system.currentTimeMillis();
-  console.log(currentTime);
+  console.log("java system current time : " + currentTime);
 }
 
 main().catch(console.error);
+```
+
+Output
+
+```
+pop value : Second item
+Generated numbers are: 2 and 5
+java system current time : 1764422092819
 ```
 
 ## License
