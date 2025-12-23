@@ -4,6 +4,7 @@ import { JarWrokerExecuterOptions } from "./types";
 
 export class WorkerJarExecutor {
   worker: Worker | null = null;
+  #resolveIsRunning: [(value: any) => void] = [] as any;
 
   start(options: JarWrokerExecuterOptions) {
     return new Promise((resolve, reject) => {
@@ -22,6 +23,9 @@ export class WorkerJarExecutor {
             case "ready":
               resolve(true);
               break;
+            case "isRunning":
+              this.#resolveIsRunning.pop()?.(msg.data);
+              break;
             default:
               onMessage?.(msg);
           }
@@ -37,6 +41,13 @@ export class WorkerJarExecutor {
       } catch (error) {
         reject(error);
       }
+    });
+  }
+
+  async isRunning(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.worker?.postMessage({ action: "isRunning" });
+      this.#resolveIsRunning.push(resolve);
     });
   }
 

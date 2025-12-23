@@ -42,7 +42,6 @@ export class JarExecutor extends EventEmitter<EventJarExecutor> {
         env,
         stdio: ["ignore", "pipe", "pipe"],
       });
-      // console.log(this.child.spawnargs);
       this.ready = false;
 
       // Timeout logic
