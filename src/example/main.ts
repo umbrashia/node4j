@@ -1,4 +1,6 @@
 import { Gateway } from "../lib/gateway";
+import { JarExecutor } from "../lib/JarExecutor";
+import { WorkerJarExecutor } from "../lib/WorkerJarExecutor";
 
 /**
  * This is the main entry point for the example.
@@ -6,6 +8,47 @@ import { Gateway } from "../lib/gateway";
  * using the JavaGateway and interact with Java objects.
  */
 async function main() {
+  /* const executeJar = new JarExecutor({
+    jarPath: "src/example/sampleJavaNode-1.0-SNAPSHOT.jar",
+    javaOpts: ["-Xmx512m"],
+    readySignal: "server is started of spark java bridge...",
+    timeoutMs: 5000,
+    restartOnCrash: true,
+    maxRestarts: 3,
+  });
+  executeJar.on("stdout", console.warn);
+  await executeJar.start();*/
+  const workerExecuterJar = new WorkerJarExecutor();
+  await workerExecuterJar.start({
+    jarPath: "src/example/sampleJavaNode-1.0-SNAPSHOT.jar",
+    javaOpts: ["-Xmx512m"],
+    readySignal: "server is started of spark java bridge...",
+    timeoutMs: 5000,
+    restartOnCrash: true,
+    maxRestarts: 3,
+    onMessage: (message) => {
+      switch (message.type) {
+        case "stdout":
+          console.log(message.args);
+          break;
+        case "stderr":
+          console.error(message.args);
+          break;
+        case "exit":
+          console.error(message.args);
+          break;
+        case "shutdown":
+          console.log(message.args);
+          break;
+        case "ready":
+          console.log(message.args);
+          break;
+        default:
+          console.log(message);
+          break;
+      }
+    },
+  });
   const myJava = new Gateway({
     host: "127.0.0.1",
     port: 25333,
@@ -28,6 +71,7 @@ async function main() {
   console.log(`Execution time: ${timeInMs} ms`);
   console.log("Current time in ms : " + currentTime);
   console.log(`Generated numbers are: ${number1} and ${number2}`);
+  workerExecuterJar.stop();
 }
 
 main().catch((error) => {

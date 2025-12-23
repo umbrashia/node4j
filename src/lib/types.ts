@@ -43,3 +43,34 @@ export type CallbackSocket = {
   resolve: (message: string) => void;
   reject: (error: any) => void;
 };
+
+export interface JVMJarExeOptions {
+  jarPath: string;
+  args?: string[];
+  javaOpts?: string[];
+  cwd?: string;
+  env?: NodeJS.ProcessEnv;
+  readySignal?: string; // Text indicating JVM is ready
+  timeoutMs?: number; // Fail if JVM not ready in time
+  restartOnCrash?: boolean; // Auto-restart JVM
+  maxRestarts?: number; // Cap restarts
+}
+
+export interface EventJarExecutor {
+  stdout: [responseTerminal: string];
+  stderr: [error: string];
+  ready: [];
+  exit: [code: number | null, signal: NodeJS.Signals | null];
+  shutdown: [message: string];
+}
+
+export type JarExecutorMessage = {
+  [K in keyof EventJarExecutor]: {
+    type: K;
+    args: EventJarExecutor[K];
+  };
+}[keyof EventJarExecutor];
+
+export interface JarWrokerExecuterOptions extends JVMJarExeOptions {
+  onMessage?: (message: JarExecutorMessage) => void;
+}
