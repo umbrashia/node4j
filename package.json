@@ -16,7 +16,15 @@
     "type": "git",
     "url": "git+https://github.com/umbrashia/node4j.git"
   },
-  "keywords": [],
+  "keywords": [
+    "node",
+    "java",
+    "node-java",
+    "bridge",
+    "jvm",
+    "py4j",
+    "typescript"
+  ],
   "author": "",
   "license": "MIT",
   "bugs": {
