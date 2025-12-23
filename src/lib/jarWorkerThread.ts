@@ -5,12 +5,17 @@ import { parentPort, workerData } from "worker_threads";
 
 (async () => {
   const executor = new JarExecutor(workerData.options);
-  //recive post message.
-
   if (parentPort != null) {
     parentPort.on("message", (msg) => {
       if (msg.action === "stop") {
         executor.kill("Worker stop command received");
+      }
+      if (msg.action === "isRunning") {
+        if (parentPort)
+          parentPort.postMessage({
+            type: "isRunning",
+            data: executor.isRunning(),
+          });
       }
     });
     executor.on("stdout", (d) => {

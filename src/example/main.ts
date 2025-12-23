@@ -29,26 +29,27 @@ async function main() {
     onMessage: (message) => {
       switch (message.type) {
         case "stdout":
-          console.log(message.args);
+          console.log("stdout", JSON.stringify(message.data));
           break;
         case "stderr":
-          console.error(message.args);
+          console.error("stderr", message.data);
           break;
         case "exit":
-          console.error(message.args);
+          console.error("exit", message.data);
           break;
         case "shutdown":
-          console.log(message.args);
+          console.log("shutdown", message.data);
           break;
         case "ready":
-          console.log(message.args);
+          console.log("is ready", message.data);
           break;
         default:
-          console.log(message);
+          console.log("default message type", message);
           break;
       }
     },
   });
+  console.log("isRunning check : ", await workerExecuterJar.isRunning());
   const myJava = new Gateway({
     host: "127.0.0.1",
     port: 25333,

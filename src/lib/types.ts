@@ -67,7 +67,7 @@ export interface EventJarExecutor {
 export type JarExecutorMessage = {
   [K in keyof EventJarExecutor]: {
     type: K;
-    args: EventJarExecutor[K];
+    data: EventJarExecutor[K];
   };
 }[keyof EventJarExecutor];
 

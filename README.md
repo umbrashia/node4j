@@ -274,7 +274,7 @@ const executor = new WorkerJarExecutor();
 await executor.start(config);
 
 // Check if JAR is running
-const isRunning = executor.isRunning();
+const isRunning = await executor.isRunning();
 
 // Shutdown the JAR
 await executor.shutdown();
